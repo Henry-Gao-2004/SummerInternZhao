@@ -1,14 +1,45 @@
-from llama_index.core import VectorStoreIndex, SimpleDirectoryReader
-from llama_index.llms.openai import OpenAI
-from llama_index.core import Settings
+def emo_classifier(text:str) -> str:
+    # step 4
+    prompt = f"""Please classify the emotion of the text into one of the emotions []. The text is: {text} """
+    url = "http://localhost:11434/api/chat"
+    payload = {
+        "model": "gemma3:latest",
+        "messages": [
+            {
+                "role": "user",
+                "content": prompt,
+            }
+        ],
+        "stream": False,
+    }
+    
+    response = requests.post(url, json=payload)
+    
+    if response.status_code == 200:
+        result = response.json()["message"]["content"].strip().lower()
+        return result
+    else:
+        raise RuntimeError(f"Request failed: {response.status_code} {response.text}")
 
-Settings.llm = OpenAI(model="gpt-3.5-turbo")
-
-documents = SimpleDirectoryReader("data").load_data()
-
-index = VectorStoreIndex.from_documents(documents)
-
-query_engine = index.as_query_engine()
-
-response = query_engine.query("I have a headache")
-print(response)
+def summarize(text: str) -> str:
+    # step 5
+    prompt = f"""Please summarize the text into one to two short sentences: {text} """
+    url = "http://localhost:11434/api/chat"
+    payload = {
+        "model": "gemma3:latest",
+        "messages": [
+            {
+                "role": "user",
+                "content": prompt,
+            }
+        ],
+        "stream": False,
+    }
+    
+    response = requests.post(url, json=payload)
+    
+    if response.status_code == 200:
+        result = response.json()["message"]["content"].strip().lower()
+        return result
+    else:
+        raise RuntimeError(f"Request failed: {response.status_code} {response.text}")

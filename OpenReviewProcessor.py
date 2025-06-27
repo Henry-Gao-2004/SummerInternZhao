@@ -1,6 +1,8 @@
 import json
 import requests
 from tqdm import tqdm
+import torch
+from llm_prompting import generate_output, load_model
 
 def merge_replies_with_same_author(data):
     def merge_replies(parent, replies):
@@ -30,26 +32,9 @@ def label_score_changes_and_attitudes(data):
 Text: "{text}"
 
 Respond only with one of the following: "increasing", "decreasing", or "same"."""
-
-        url = "http://localhost:11434/api/chat"
-        payload = {
-            "model": "gemma3:latest",
-            "messages": [
-                {
-                    "role": "user",
-                    "content": prompt,
-                }
-            ],
-            "stream": False,
-        }
-        response = requests.post(url, json=payload)
-
-        if response.status_code == 200:
-            # print(response.json())
-            result = response.json()["message"]["content"].strip().lower()
-            return result
-        else:
-            raise RuntimeError(f"Request failed: {response.status_code} {response.text}")
+        device = torch.device(f"cuda:{args.gpu_id}" if torch.cuda.is_available() else "cpu")
+        tokenizer, model = load_model("google/gemma-3-4b-it", device)
+        return generate_output(prompt, tokenizer, model, device, 1)
 
     def analyze_attitude(text):
         url = "http://localhost:11434/api/generate"

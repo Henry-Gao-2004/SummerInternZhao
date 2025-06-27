@@ -107,8 +107,53 @@ def process_multiwoz(type: str="all"):
     with open("datasets/multiwoz_"+type+"_processed.json", "w", encoding="utf-8") as f:
         json.dump(result_multiwoz, f, ensure_ascii=False, indent=4)
 
+maia_emotions = ["Happiness","Empathy","Neutral","Disappointment","Confusion","Frustration","Anger","Anxiety"]
+def process_maia():
+    result_maia = []
+    for f in os.listdir("datasets/maia"):
+            data = json.load(open("datasets/maia/" + f, "r", encoding="utf-8"))
+            for dialogue in data:
+                previous_text = ""
+                emotion = 0
+                for turn in dialogue["turns"]:
+                    if turn["floor"] == "inbound":
+                        previous_text = "\n".join(turn["text_mt"])
+                        emotions = turn["Emotion"]
+                        if (len(emotions) == 0):
+                            emotion = 2
+                        else:
+                            emotion = max(set(emotions), key=emotions.count)
+                    elif turn["floor"] == "outbound":
+                        data_point = {}
+                        data_point["target_text"] = "\n".join(turn["text_src"])
+                        data_point["prev_text"] = previous_text
+                        data_point["emotion"] = maia_emotions[emotion]
+                        
+                        correctnesses = turn["Correctness"]
+                        if len(correctnesses) == 0:
+                            continue
+                        correctness = max(set(correctnesses), key=correctnesses.count)
+                        data_point["correctness"] = correctness
+
+                        engagements = turn["Emotion"]
+                        if len(engagements) == 0:
+                            continue
+                        engagement = max(set(engagements), key=engagements.count)
+                        data_point["engagement"] = engagement
+                        
+                        data_point["Understanding"] = turn["Understanding"]
+                        data_point["Sensibleness"] = turn["Sensibleness"]
+                        data_point["IQ"] = turn["IQ"]
+                        data_point["Politeness"] = turn["Politeness"]
+
+                        result_maia.append(data_point)
+
+    with open("datasets/maia_processed.json", "w", encoding="utf-8") as f:
+        json.dump(result_maia, f, ensure_ascii=False, indent=4)
+
 if __name__ == "__main__":
-    process_soulchat()
-    process_daily_dialog()
-    process_meddialog()
-    process_multiwoz()
+    # process_soulchat()
+    # process_daily_dialog()
+    # process_meddialog()
+    # process_multiwoz()
+    process_maia()
