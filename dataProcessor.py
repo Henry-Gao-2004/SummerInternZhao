@@ -174,10 +174,38 @@ def process_uss():
     with open("datasets/uss_ratings_processed.json", "w", encoding="utf-8") as f:
         json.dump(result, f, ensure_ascii=False, indent=4)
 
+def process_msdialog(path: str):
+    data = json.load(open("datasets/msdialog/"+path, "r", encoding="utf-8"))
+    result_msdialog = []
+    for id, dialog in data.items():
+        title = dialog["title"]
+        conversation = dialog["utterances"]
+        previous_text = ""
+        for idx in range(0, len(conversation)):
+            if conversation[idx]["actor_type"] != "User" or idx == 0:
+                previous_text += conversation[idx]["utterance"] + "\n"
+                continue
+            data_point = {}
+            data_point["target_text"] = conversation[idx]["utterance"]
+            previous_text += conversation[idx-1]["utterance"] + "\n"
+            data_point["prev_text"] = previous_text
+            data_point["vote"] = conversation[idx]["vote"]
+            data_point["is_answer"] = conversation[idx]["is_answer"]
+            if idx + 1 < len(conversation):
+                data_point["next_text"] = conversation[idx + 1]["utterance"]
+            result_msdialog.append(data_point)
+
+    with open("datasets/"+path.replace(".json", "_processed.json"), "w", encoding="utf-8") as f:
+        json.dump(result_msdialog, f, ensure_ascii=False, indent=4)
+
+
 if __name__ == "__main__":
     # process_soulchat()
     # process_daily_dialog()
     # process_meddialog()
     # process_multiwoz()
     # process_maia()
-    process_uss()
+    # process_uss()
+    # process_msdialog("datasets/msdialog/msdialog.json")
+    process_msdialog("MSDialog-Intent.json")
+    process_msdialog("MSDialog-Complete.json")
