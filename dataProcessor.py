@@ -2,7 +2,7 @@ import json
 
 from tqdm import tqdm
 import os
-import pandas as pd
+# import pandas as pd
 
 def process_soulchat():
     soulchat_data = json.load(open("datasets/soulchat_original.json", "r",encoding="utf-8"))
@@ -181,14 +181,18 @@ def process_msdialog(path: str):
         title = dialog["title"]
         conversation = dialog["utterances"]
         previous_text = ""
+        history = []
         for idx in range(0, len(conversation)):
-            if conversation[idx]["actor_type"] != "User" or idx == 0:
-                previous_text += conversation[idx]["utterance"] + "\n"
+            if conversation[idx]["actor_type"] == "User" or idx == 0:
+                history.append(conversation[idx]["utterance"])
                 continue
             data_point = {}
             data_point["target_text"] = conversation[idx]["utterance"]
-            previous_text += conversation[idx-1]["utterance"] + "\n"
+            previous_text = conversation[idx-1]["utterance"]
             data_point["prev_text"] = previous_text
+            data_point["history"] = history.copy()
+            # print("history:", history)
+            history.append(data_point["target_text"])
             data_point["vote"] = conversation[idx]["vote"]
             data_point["is_answer"] = conversation[idx]["is_answer"]
             if idx + 1 < len(conversation):
