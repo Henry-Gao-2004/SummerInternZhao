@@ -2,7 +2,7 @@ import json
 
 from tqdm import tqdm
 import os
-# import pandas as pd
+import pandas as pd
 
 def process_soulchat():
     soulchat_data = json.load(open("datasets/soulchat_original.json", "r",encoding="utf-8"))
@@ -162,22 +162,22 @@ def process_uss():
     last_session = 0
     previous_text = ""
     history = []
-    for _, row in tqdm(data.iterrows()):
+    for _, row in data.iterrows():
         data = row.to_dict()
         if last_session == data["session_idx"]:
             data_point = {}
             data_point["from"] = data["split"]
             data_point["target_text"] = data["system"]
             data_point["prev_text"] = previous_text
-            history.append(data_point["target_text"])
-            history.append(data["user"])
             data_point["history"] = history.copy()
+            history.append(previous_text)
+            history.append(data_point["target_text"])
+            previous_text = data["user"]
             data_point["score"] = data["mean_turn_rating"]
             result.append(data_point)
         else:
             history = []
             history.append(data["system"])
-            history.append(data["user"])
             previous_text = data["user"]
         last_session = data["session_idx"]
     
@@ -217,7 +217,7 @@ if __name__ == "__main__":
     # process_daily_dialog()
     # process_meddialog()
     # process_multiwoz()
-    process_maia()
-    # process_uss()
+    # process_maia()
+    process_uss()
     # process_msdialog("MSDialog-Intent.json")
     # process_msdialog("MSDialog-Complete.json")
