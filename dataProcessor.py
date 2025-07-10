@@ -115,6 +115,7 @@ def process_maia():
             data = json.load(open("datasets/maia/" + f, "r", encoding="utf-8"))
             for dialogue in data:
                 previous_text = ""
+                history = []
                 emotion = 0
                 for turn in dialogue["turns"]:
                     if turn["floor"] == "inbound":
@@ -129,6 +130,9 @@ def process_maia():
                         data_point["target_text"] = "\n".join(turn["text_src"])
                         data_point["prev_text"] = previous_text
                         data_point["emotion"] = maia_emotions[emotion]
+                        data_point["history"] = history.copy()
+                        history.append(previous_text)
+                        history.append(data_point["target_text"])
                         
                         correctnesses = turn["Correctness"]
                         if len(correctnesses) == 0:
@@ -157,6 +161,7 @@ def process_uss():
     result = []
     last_session = 0
     previous_text = ""
+    history = []
     for _, row in tqdm(data.iterrows()):
         data = row.to_dict()
         if last_session == data["session_idx"]:
@@ -164,11 +169,16 @@ def process_uss():
             data_point["from"] = data["split"]
             data_point["target_text"] = data["system"]
             data_point["prev_text"] = previous_text
-            previous_text += data_point["target_text"]+"\n"+ data["user"]+"\n"
+            history.append(data_point["target_text"])
+            history.append(data["user"])
+            data_point["history"] = history.copy()
             data_point["score"] = data["mean_turn_rating"]
             result.append(data_point)
         else:
-            previous_text = data["system"]+"\n"+data["user"]+"\n"
+            history = []
+            history.append(data["system"])
+            history.append(data["user"])
+            previous_text = data["user"]
         last_session = data["session_idx"]
     
     with open("datasets/uss_ratings_processed.json", "w", encoding="utf-8") as f:
@@ -191,7 +201,6 @@ def process_msdialog(path: str):
             previous_text = conversation[idx-1]["utterance"]
             data_point["prev_text"] = previous_text
             data_point["history"] = history.copy()
-            # print("history:", history)
             history.append(data_point["target_text"])
             data_point["vote"] = conversation[idx]["vote"]
             data_point["is_answer"] = conversation[idx]["is_answer"]
@@ -208,8 +217,7 @@ if __name__ == "__main__":
     # process_daily_dialog()
     # process_meddialog()
     # process_multiwoz()
-    # process_maia()
+    process_maia()
     # process_uss()
-    # process_msdialog("datasets/msdialog/msdialog.json")
-    process_msdialog("MSDialog-Intent.json")
-    process_msdialog("MSDialog-Complete.json")
+    # process_msdialog("MSDialog-Intent.json")
+    # process_msdialog("MSDialog-Complete.json")
