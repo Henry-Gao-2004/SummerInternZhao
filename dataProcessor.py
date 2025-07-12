@@ -156,6 +156,26 @@ def process_maia():
     with open("datasets/maia_processed.json", "w", encoding="utf-8") as f:
         json.dump(result_maia, f, ensure_ascii=False, indent=4)
 
+def process_emowoz():
+    data = json.load(open("datasets/emowoz-multiwoz.json", "r", encoding="utf-8"))
+    result_emowoz = []
+    for id, dialog in data.items():
+        turns = dialog["log"]
+        history = []
+        for idx in range(1, len(turns), 2):
+            data_point = {}
+            data_point["target_text"] = turns[idx]["text"]
+            data_point["prev_text"] = turns[idx-1]["text"]
+            if idx + 1 < len(turns):
+                data_point["next_text"] = turns[idx+1]["text"]
+            data_point["emotion"] = turns[idx-1]["emotion"][-1]["emotion"]
+            data_point["history"] = history.copy()
+            history.append(data_point["prev_text"])
+            history.append(data_point["target_text"])
+            result_emowoz.append(data_point)
+    with open("datasets/emowoz_processed.json", "w", encoding="utf-8") as f:
+        json.dump(result_emowoz, f, ensure_ascii=False, indent=4)
+
 def process_uss():
     data = pd.read_parquet("datasets/uss-ratings-dataset.parquet")
     result = []
@@ -218,6 +238,7 @@ if __name__ == "__main__":
     # process_meddialog()
     # process_multiwoz()
     # process_maia()
-    process_uss()
+    process_emowoz()
+    # process_uss()
     # process_msdialog("MSDialog-Intent.json")
     # process_msdialog("MSDialog-Complete.json")
