@@ -1,14 +1,16 @@
 from collections import Counter
 from rouge_score import rouge_scorer
 from nltk.translate.bleu_score import sentence_bleu, SmoothingFunction
-from bert_score import score
+from bert_score import BERTScorer
 import nltk
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 import torch
 
+
 nltk.download('punkt')
 
 def compute_metrics(predictions, references):
+    print("Computing metrics...")
     assert len(predictions) == len(references), "Mismatched prediction and reference counts."
 
     # Initialize
@@ -37,7 +39,6 @@ def compute_metrics(predictions, references):
         all_pred_tokens.extend(pred_tokens)
         all_ref_tokens.extend(ref_tokens)
     
-    print("rouge")
 
     # Distinct
     def distinct_n(tokens, n):
@@ -46,12 +47,11 @@ def compute_metrics(predictions, references):
 
     distinct_1 = distinct_n(all_pred_tokens, 1)
     distinct_2 = distinct_n(all_pred_tokens, 2)
-    print("distinct")
 
     # BERTScore
-    (P, R, F), hashname = score(predictions, references, lang="en", return_hash=True)
-    avg_bertscore = F.mean().item()
-    print(avg_bertscore)
+    scorer = BERTScorer(model_type='bert-base-uncased')
+    P, R, F = scorer.score(predictions, references)
+    avg_bertscore = F.mean()
 
     # Return all metrics
     num = len(predictions)
